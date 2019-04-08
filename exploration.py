@@ -46,14 +46,14 @@ def updateGrid(grid):
                 rowList = [row + 1, row - 1]
                 columnList = [column + 1, column - 1]
                 for space in rowList:
-                    if random.random() < 0.25:
+                    if random.random() < 0.05:
                         toChange.append([space, column])
                 for space in columnList:
-                    if random.random() < 0.25:
+                    if random.random() < 0.05:
                         toChange.append([row, space])
     for item in toChange:
         if item[0] >= 0 and item[0] < rows and item[1] >= 0 and item[1] < columns:
-            if grid[item[0]][item[1]] == "O" or grid[item[0]][item[1]] == "R":
+            if grid[item[0]][item[1]] == "O" or grid[item[0]][item[1]] == "R" or grid[item[0]][item[1]] == "X":
                 grid[item[0]][item[1]] = "F"
             if grid[item[0]][item[1]] == "T":
                 grid[item[0]][item[1]] = "B"
@@ -62,6 +62,13 @@ def checkRobot(grid):
     for row in grid:
         for space in row:
             if space == "R":
+                return True
+    return False
+
+def checkGrid(grid):
+    for row in grid:
+        for space in row:
+            if space == "O":
                 return True
     return False
 
@@ -87,10 +94,10 @@ def safeFromFire(grid, row, column):
         if grid[row - 1][column] == "B" or grid[row - 1][column] == "F":
             return False
     if column + 1 < len(grid[0]):
-        if grid[row][column + 1] != "B" or grid[row][column + 1] != "F":
+        if grid[row][column + 1] == "B" or grid[row][column + 1] == "F":
             return False
     if column - 1 >= 0:        
-        if grid[row][column - 1] != "F" or grid[row][column - 1] != "B":
+        if grid[row][column - 1] == "F" or grid[row][column - 1] == "B":
             return False
     return True
 
@@ -102,10 +109,10 @@ def safeFromFallingTrees(grid, row, column):
         if grid[row - 2][column] == "B":
             return False
     if column + 2 < len(grid[0]):
-        if grid[row][column + 2] != "B":
+        if grid[row][column + 2] == "B":
             return False
     if column - 2 >= 0:        
-        if grid[row][column - 2] != "B":
+        if grid[row][column - 2] == "B":
             return False
     return True
 
@@ -116,7 +123,19 @@ def notTree(space):
         return False
 
 def inBounds(grid, row, column):
-    if row < len(grid) and row >= 0 and column < len(grid[0]) and row >= 0:
+    if row < len(grid) and row >= 0 and column < len(grid[0]) and column >= 0:
+        return True
+    else:
+        return False
+
+def checkSpace(grid, row, column):
+    if inBounds(grid, row, column) and notTree(grid[row][column]) and safeFromFallingTrees(grid, row, column) and safeFromFire(grid, row, column) and unexplored(grid[row][column]):
+        return True
+    else:
+        return False
+
+def checkExploredSpace(grid, row, column):
+    if inBounds(grid, row, column) and notTree(grid[row][column]) and safeFromFallingTrees(grid, row, column) and safeFromFire(grid, row, column):
         return True
     else:
         return False
@@ -125,9 +144,57 @@ def main():
     grid = generateGrid(10, 10, 0.10, 1)
     prettyPrint(grid)
     robotLocation = [0, 0]
-    while checkRobot(grid):
+    exploreCounter = 0
+    while checkRobot(grid) and checkGrid(grid):
         
+        if checkSpace(grid, robotLocation[0] + 1, robotLocation[1]):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0] + 1, robotLocation[1]]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+            exploreCounter += 1
+        
+        elif checkSpace(grid, robotLocation[0] - 1, robotLocation[1]):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0] - 1, robotLocation[1]]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+            exploreCounter += 1
+        
+        elif checkSpace(grid, robotLocation[0], robotLocation[1] + 1):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0], robotLocation[1] + 1]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+            exploreCounter += 1
+        
+        elif checkSpace(grid, robotLocation[0], robotLocation[1] - 1):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0], robotLocation[1] - 1]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+            exploreCounter += 1
+        
+        elif checkExploredSpace(grid, robotLocation[0] + 1, robotLocation[1]):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0] + 1, robotLocation[1]]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+        
+        elif checkExploredSpace(grid, robotLocation[0] - 1, robotLocation[1]):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0] - 1, robotLocation[1]]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+        
+        elif checkExploredSpace(grid, robotLocation[0], robotLocation[1] + 1):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0], robotLocation[1] + 1]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+        
+        elif checkExploredSpace(grid, robotLocation[0], robotLocation[1] - 1):
+            grid[robotLocation[0]][robotLocation[1]] = "X"
+            robotLocation = [robotLocation[0], robotLocation[1] - 1]
+            grid[robotLocation[0]][robotLocation[1]] = "R"
+        
+        else:
+            print("No move available")
         updateGrid(grid)
         prettyPrint(grid)
+    print(str(exploreCounter) + "/" + str(len(grid) * len(grid[0])) + " spaces explored")
 
 main()
